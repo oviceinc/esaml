@@ -60,7 +60,7 @@ encode_http_redirect(IdpTarget, SignedXml, Username, RelayState) ->
 
   QueryList = [
                {"SAMLEncoding", ?deflate},
-               {Type, uri_string:quote(base64:encode_to_string(zlib:zip(Req)))},
+               {Type, base64:encode_to_string(zlib:zip(Req))},
                {"RelayState", uri_string:normalize(binary_to_list(RelayState))}
               ],
   QueryParamStr = uri_string:compose_query(QueryList),
