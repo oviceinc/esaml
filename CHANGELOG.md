@@ -2,6 +2,9 @@
 
 All changes are in the `main` branch (`master` remains unchanged).
 
+### v4.6.0
++   remove uri double encoding thanks to @DiaanEngelbrecht
+
 ### v4.5.0
 +   Update minor version due to using non-deprecated functions which may break previously supported OTP versions, specifically `http_uri` to `uri_string` [thanks jamesvl](https://github.com/dropbox/esaml/pull/6)
 
@@ -29,7 +32,7 @@ All changes are in the `main` branch (`master` remains unchanged).
 ### v4.0.0
 
 +   Fixed issue: #11 - Support for Cowboy 2
-    
+
 ### v3.6.1
 
 +   Fixed issue: #9 - HTTP-REDIRECT wrong case
