@@ -277,19 +277,9 @@ validate_assertion(Xml, DuplicateFun, SP = #esaml_sp{}) ->
             end
         end,
         fun(A) ->
-            if SP#esaml_sp.idp_signs_assertions ->
-                case xmerl_dsig:verify(A, SP#esaml_sp.trusted_fingerprints) of
-                    ok -> A;
-                    InnerError -> 
-                        if SP#esaml_sp.idp_signs_envelopes ->
-                            case xmerl_dsig:verify(Xml, SP#esaml_sp.trusted_fingerprints) of
-                                ok -> A;
-                                OuterError -> {error, {envelope, OuterError}}
-                            end;
-                        true -> {error, {assertion, InnerError}}
-                        end
-                end;
-            true -> A
+            case validate_idp_signs(Xml, A, SP) of
+                ok -> A;
+                ValidationError -> ValidationError
             end
         end,
         fun(A) ->
@@ -305,6 +295,38 @@ validate_assertion(Xml, DuplicateFun, SP = #esaml_sp{}) ->
             end
         end
     ], Xml).
+
+validate_idp_signs_assertions(A, TrustedFingerprints) ->
+    xmerl_dsig:verify(A, TrustedFingerprints).
+
+
+validate_idp_signs_envelopes(Xml, TrustedFingerprints) ->
+    xmerl_dsig:verify(Xml, TrustedFingerprints).
+
+validate_idp_signs_both(Xml, A, SP) ->
+    EnvelopesResult = validate_idp_signs_envelopes(Xml, SP#esaml_sp.trusted_fingerprints),
+    AssertionsResult = validate_idp_signs_assertions(A, SP#esaml_sp.trusted_fingerprints),
+    % If one of both is ok, return ok, otherwise return the failing result
+    if  
+        EnvelopesResult =:= ok -> ok;
+        AssertionsResult =:= ok -> ok;
+        true -> 
+            {error, EnvelopesError} = EnvelopesResult,
+            {error, AssertionsError} = AssertionsResult,
+            {error, {EnvelopesError, AssertionsError}}
+    end.
+
+validate_idp_signs(Xml, A, SP) ->
+    case {SP#esaml_sp.idp_signs_envelopes, SP#esaml_sp.idp_signs_assertions} of
+        {true, true} ->
+            validate_idp_signs_both(Xml, A, SP);
+        {true, false} ->
+            validate_idp_signs_envelopes(Xml, SP#esaml_sp.trusted_fingerprints);
+        {false, true} ->
+            validate_idp_signs_assertions(A, SP#esaml_sp.trusted_fingerprints);
+        _ ->
+            {ok, ok}
+    end.
 
 
 %% @doc Decrypts an encrypted assertion element.
